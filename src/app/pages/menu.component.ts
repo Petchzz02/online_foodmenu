@@ -12,10 +12,13 @@ import { FoodService, MenuItem } from '../food.service';
       <!-- Table Selection Section -->
       <div class="table-selection-section">
         <label class="table-label">🪑 เลือกโต๊ะของคุณ:</label>
-        <select [(ngModel)]="selectedTable" class="table-select" (change)="onTableChange()">
+        <select [(ngModel)]="selectedTable" class="table-select" (change)="onTableChange()" [disabled]="isTableLocked">
           <option [ngValue]="null" disabled>-- กรุณาเลือกโต๊ะ --</option>
           <option *ngFor="let t of tables" [value]="t">โต๊ะที่ {{ t }}</option>
         </select>
+        <div *ngIf="isTableLocked" class="table-locked-message">
+          🔒 โต๊ะนี้มีออเดอร์แล้ว ไม่สามารถเปลี่ยนโต๊ะได้
+        </div>
       </div>
 
       <h2>🍽️ รายการอาหาร</h2>
@@ -119,6 +122,30 @@ import { FoodService, MenuItem } from '../food.service';
       outline: none;
       border-color: #f4511e;
       box-shadow: 0 0 0 3px rgba(244, 81, 30, 0.1);
+    }
+
+    .table-select:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .table-locked-message {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: #e3f2fd;
+      color: #1565c0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border-left: 4px solid #2196f3;
+    }
+
+    @media (max-width: 768px) {
+      .table-locked-message {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+      }
     }
 
     .warning-message {
@@ -452,16 +479,23 @@ export class MenuComponent {
   showNoteModal: boolean = false;
   selectedItem: MenuItem | null = null;
   itemNote: string = '';
+  isTableLocked: boolean = false;
 
   constructor(private foodService: FoodService) {
     this.menuItems = this.foodService.getMenu();
     this.tables = this.foodService.tables;
     this.selectedTable = this.foodService.getSelectedTable();
+    this.checkTableLocked();
+  }
+
+  checkTableLocked() {
+    this.isTableLocked = this.foodService.hasTableOrdered(this.selectedTable);
   }
 
   onTableChange() {
     if (this.selectedTable) {
       this.foodService.setSelectedTable(this.selectedTable);
+      this.checkTableLocked();
     }
   }
 

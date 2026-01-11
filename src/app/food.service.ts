@@ -26,6 +26,15 @@ export interface Order {
   note?: string; // หมายเหตุจากลูกค้า
 }
 
+// โครงสร้างข้อมูลการเรียกพนักงาน
+export interface StaffCall {
+  callId: number;
+  tableId: number;
+  note: string;
+  timestamp: Date;
+  status: 'pending' | 'completed'; // pending=รอดำเนินการ, completed=ดำเนินการแล้ว
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -51,6 +60,7 @@ export class FoodService {
   private cart: CartItem[] = [];
   private orders: Order[] = [];
   private selectedTableId: number | null = null; // โต๊ะที่เลือกในปัจจุบัน
+  private staffCalls: StaffCall[] = []; // รายการเรียกพนักงาน
 
   constructor() { }
 
@@ -154,5 +164,36 @@ export class FoodService {
   // ดึงออเดอร์ที่ยังไม่ชำระเงินของโต๊ะ
   getUnpaidOrdersByTable(tableId: number) {
     return this.orders.filter(o => o.tableId === tableId && !o.isPaid);
+  }
+
+  // เช็คว่าโต๊ะมีออเดอร์แล้วหรือยัง
+  hasTableOrdered(tableId: number | null): boolean {
+    if (!tableId) return false;
+    return this.orders.some(o => o.tableId === tableId && !o.isPaid);
+  }
+
+  // เรียกพนักงาน
+  callStaff(tableId: number, note: string) {
+    const newCall: StaffCall = {
+      callId: Date.now(),
+      tableId: tableId,
+      note: note,
+      timestamp: new Date(),
+      status: 'pending'
+    };
+    this.staffCalls.push(newCall);
+  }
+
+  // ดึงรายการเรียกพนักงานทั้งหมด
+  getStaffCalls() {
+    return this.staffCalls;
+  }
+
+  // เปลี่ยนสถานะการเรียกพนักงานเป็นดำเนินการแล้ว
+  markCallAsCompleted(callId: number) {
+    const call = this.staffCalls.find(c => c.callId === callId);
+    if (call) {
+      call.status = 'completed';
+    }
   }
 }
